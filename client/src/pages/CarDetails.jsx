@@ -4,6 +4,7 @@ import { assets, dummyCarData } from '../assets/assets';
 import Loader from '../components/Loader';
 import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
+import MapComponent from '../components/MapComponent';
 
 const CarDetails = () => {
   const {id} = useParams();
@@ -65,6 +66,11 @@ const CarDetails = () => {
                 <div>
                   <h1 className='text-xl font-medium mb-3'>Description</h1>
                   <p className='text-gray-500'>{car.description}</p>
+                </div>
+                {/* Pickup Location Map */}
+                <div>
+                  <h1 className='text-xl font-medium mb-3'>Pickup Location</h1>
+                  <MapComponent location={car.location} label={`${car.brand} ${car.model} — ${car.location}`} />
                 </div>
                 {/* features */}
                 <div>
