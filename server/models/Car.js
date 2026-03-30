@@ -14,8 +14,11 @@ const carSchema = new mongoose.Schema({
   transmission: {type: String, required: true},
   pricePerDay: {type: Number, required: true},
   location: {type: String, required: true},
+  latitude: {type: Number},
+  longitude: {type: Number},
   description: {type: String, required: true},
-  isAvailable: {type: Boolean, default: true}
+  isAvailable: {type: Boolean, default: true},
+  rating: {type: Number, default: 5}
 }, {timestamps: true});
 
 const Car = mongoose.model('Car',carSchema);
