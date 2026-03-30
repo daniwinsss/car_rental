@@ -43,23 +43,44 @@ RULES:
 AVAILABLE CARS INVENTORY:
 ${inventorySummary}`;
 
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
-      systemInstruction,
-    });
-
     // Build history (all messages except the last user one)
     const history = messages.slice(0, -1).map(m => ({
       role: m.role,
       parts: [{ text: m.parts[0].text }]
     }));
 
-    const chat = model.startChat({ history });
-
-    // Send last user message
     const lastMessage = messages[messages.length - 1];
-    const result = await chat.sendMessage(lastMessage.parts[0].text);
-    const responseText = result.response.text();
+    const fallbackModels = ['gemini-2.5-flash', 'gemini-3.0-flash'];
+    
+    let responseText = null;
+    let fallbackError = null;
+
+    for (const modelName of fallbackModels) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          systemInstruction,
+        });
+
+        const chat = model.startChat({ history });
+        const result = await chat.sendMessage(lastMessage.parts[0].text);
+        responseText = result.response.text();
+        
+        break; // Break loop if successful
+      } catch (err) {
+        fallbackError = err;
+        // If the error isn't a quota issue (429) or missing model (404), throw it immediately
+        if (!err.message.includes('429') && !err.message.includes('404')) {
+          throw err;
+        }
+        console.warn(`[Fallback Warning]: ${modelName} failed or exhausted. Trying next model...`);
+        // Loop continues to the next model in the array
+      }
+    }
+
+    if (!responseText) {
+      throw new Error(`All models are exhausted or unavailable. Final error: ${fallbackError.message}`);
+    }
 
     res.json({ success: true, reply: responseText });
   } catch (error) {
