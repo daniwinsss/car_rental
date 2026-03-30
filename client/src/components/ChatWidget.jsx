@@ -75,7 +75,7 @@ const MessageBubble = ({ msg, cars, navigate }) => {
           {parts.map((p, i) =>
             p.type === 'text'
               ? <span key={i} style={{ whiteSpace: 'pre-wrap' }}>{p.content}</span>
-              : <CarChip key={i} car={p.car} onClick={() => { navigate(`/car-details/${p.car._id}`); scrollTo(0,0); }} />
+              : <CarChip key={i} car={p.car} onClick={() => { navigate(`/car-details/${p.car._id}`); scrollTo(0, 0); }} />
           )}
         </div>
       </div>
@@ -85,7 +85,7 @@ const MessageBubble = ({ msg, cars, navigate }) => {
 
 const GREETING = {
   role: 'model',
-  parts: [{ text: "Hi! 👋 I'm your car rental assistant. Tell me about your trip and I'll find the perfect car for you!\n\nFor example: *\"I need a 5-seater SUV for a family trip, budget $120/day\"*" }]
+  parts: [{ text: "Hi! 👋 I'm your car rental assistant. Tell me about your trip and I'll find the perfect car for you!\n\nFor example: \"I need a 5-seater SUV for a family trip, budget $120/day\"" }]
 };
 
 const ChatWidget = () => {
@@ -154,9 +154,8 @@ const ChatWidget = () => {
 
       {/* Chat Panel */}
       <div
-        className={`fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] bg-gray-50 rounded-2xl shadow-2xl border border-gray-200 flex flex-col transition-all duration-300 ${
-          open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
-        }`}
+        className={`fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-2rem)] bg-gray-50 rounded-2xl shadow-2xl border border-gray-200 flex flex-col transition-all duration-300 ${open ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
+          }`}
         style={{ height: '520px' }}
       >
         {/* Header */}
