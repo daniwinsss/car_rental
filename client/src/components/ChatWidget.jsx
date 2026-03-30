@@ -125,10 +125,10 @@ const ChatWidget = () => {
       if (data.success) {
         setMessages(prev => [...prev, { role: 'model', parts: [{ text: data.reply }] }]);
       } else {
-        setMessages(prev => [...prev, { role: 'model', parts: [{ text: "Sorry, I couldn't process that. Please try again." }] }]);
+        setMessages(prev => [...prev, { role: 'model', parts: [{ text: `Error: ${data.message || "I couldn't process that"}` }] }]);
       }
-    } catch {
-      setMessages(prev => [...prev, { role: 'model', parts: [{ text: "Connection error. Make sure the server is running." }] }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'model', parts: [{ text: `Connection error: ${err.message}` }] }]);
     } finally {
       setLoading(false);
     }
