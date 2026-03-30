@@ -124,7 +124,7 @@ const Cars = () => {
       </div>
       
       {/* Main Split Screen Container */}
-      <div className="flex flex-col lg:flex-row flex-1 overflow-hidden" style={{ height: "calc(100vh - 180px)"}}>
+      <div className="flex flex-col lg:flex-row flex-1" style={{ minHeight: "calc(100vh - 180px)" }}>
         
         {/* Left Side: Filters and Listings */}
         <div className="w-full lg:w-[55%] xl:w-[60%] flex flex-col h-full bg-white border-r border-gray-200 shadow-sm z-10 relative">
@@ -225,7 +225,7 @@ const Cars = () => {
         </div>
 
         {/* Right Side: Map */}
-        <div className="w-full lg:w-[45%] xl:w-[40%] h-[350px] lg:h-full relative shadow-inner bg-gray-200 z-0">
+        <div className="w-full lg:w-[45%] xl:w-[40%]" style={{ height: '600px', minHeight: '400px', position: 'sticky', top: 0 }}>
           <MapComponent cars={filteredCars} />
         </div>
       </div>
