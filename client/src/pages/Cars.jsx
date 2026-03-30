@@ -4,6 +4,7 @@ import { assets } from '../assets/assets'
 import CarCard from '../components/CarCard'
 import { useSearchParams } from 'react-router-dom'
 import { useAppContext } from '../context/AppContext'
+import ChatWidget from '../components/ChatWidget'
 
 const Cars = () => {
   const [searchParams] = useSearchParams();
@@ -183,6 +184,7 @@ const Cars = () => {
           </div>
         )}
       </div>
+      <ChatWidget />
     </div>
   )
 }
