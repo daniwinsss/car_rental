@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import Title from '../../components/owner/Title';
 import { assets } from '../../assets/assets';
 import { useAppContext } from '../../context/AppContext';
@@ -16,9 +16,48 @@ const AddCar = () => {
     fuel_type:'',
     seating_capacity:'0',
     location:'',
+    latitude: null,
+    longitude: null,
     description:''
   })
   const [isLoading,setIsLoading] = useState(false);
+
+  // City autocomplete state
+  const [cityInput, setCityInput] = useState('');
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [cityLoading, setCityLoading] = useState(false);
+  const cityDebounceRef = useRef(null);
+
+  const handleCityInput = (value) => {
+    setCityInput(value);
+    setCar(prev => ({ ...prev, location: value, latitude: null, longitude: null }));
+    if (cityDebounceRef.current) clearTimeout(cityDebounceRef.current);
+    if (value.length < 2) { setCitySuggestions([]); return; }
+    cityDebounceRef.current = setTimeout(async () => {
+      setCityLoading(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&limit=5&featuretype=city`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const data = await res.json();
+        setCitySuggestions(data);
+      } catch { setCitySuggestions([]); }
+      finally { setCityLoading(false); }
+    }, 400);
+  };
+
+  const handleCitySelect = (suggestion) => {
+    const name = suggestion.display_name.split(',').slice(0, 2).join(', ');
+    setCityInput(name);
+    setCitySuggestions([]);
+    setCar(prev => ({
+      ...prev,
+      location: name,
+      latitude: parseFloat(suggestion.lat),
+      longitude: parseFloat(suggestion.lon)
+    }));
+  };
   const onSubmitHandler = async(e) =>{
     e.preventDefault();
     if(isLoading){
@@ -33,6 +72,8 @@ const AddCar = () => {
       if(data.success){
         toast.success(data.message);
         setImage(null);
+        setCityInput('');
+        setCitySuggestions([]);
         setCar({
           brand: '',
           model: '',
@@ -43,6 +84,8 @@ const AddCar = () => {
           fuel_type:'',
           seating_capacity:'0',
           location:'',
+          latitude: null,
+          longitude: null,
           description:''
         })
       }
@@ -149,16 +192,38 @@ const AddCar = () => {
             />
           </div>  
         </div>
-      {/* car location */}
+      {/* car location — city autocomplete */}
       <div className='flex flex-col w-full'>
-        <label>Location</label>
-          <select onChange={e=>setCar({...car,location:e.target.value})} value={car.location} className='px-3 py-2 mt-1 border border-borderColor rounded-md outline-none'>
-            <option value="">Select a location</option>
-            <option value="New York">New York</option>
-            <option value="Los Angeles">Los Angeles</option>
-            <option value="Chicago">Chicago</option>
-            <option value="Houston">Houston</option>
-          </select>
+        <label>Location (City)</label>
+        <div className='relative'>
+          <input
+            type='text'
+            placeholder='Type a city name e.g. New York, London...'
+            value={cityInput}
+            onChange={e => handleCityInput(e.target.value)}
+            required
+            className='w-full px-3 py-2 mt-1 border border-borderColor rounded-md outline-none focus:border-primary'
+          />
+          {cityLoading && (
+            <p className='absolute right-3 top-3.5 text-xs text-gray-400 animate-pulse'>Searching...</p>
+          )}
+          {citySuggestions.length > 0 && (
+            <ul className='absolute z-50 top-full left-0 right-0 bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-52 overflow-y-auto'>
+              {citySuggestions.map((s, i) => (
+                <li
+                  key={i}
+                  onClick={() => handleCitySelect(s)}
+                  className='px-3 py-2 text-sm text-gray-700 hover:bg-primary/10 cursor-pointer border-b border-gray-50 last:border-0'
+                >
+                  {s.display_name}
+                </li>
+              ))}
+            </ul>
+          )}
+          {car.latitude && (
+            <p className='text-xs text-green-600 mt-1'>✓ Location pinned: {car.location}</p>
+          )}
+        </div>
       </div>
       {/* Description */}
       <div className='flex flex-col w-full'>
