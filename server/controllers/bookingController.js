@@ -13,6 +13,25 @@ const checkAvailability = async (car, pickupDate, returnDate) => {
     return bookings.length === 0;
 }
 
+// api to perfectly get exact booked date ranges for a single car
+export const getCarBookedDates = async (req, res) => {
+    try {
+        const { carId } = req.params;
+        // Find all bookings for this car that are not cancelled
+        const bookings = await Booking.find({ car: carId, status: { $ne: 'cancelled' } });
+        
+        // Return array of { start, end } dates
+        const bookedRanges = bookings.map(b => ({
+            start: b.pickupDate,
+            end: b.returnDate
+        }));
+
+        res.json({ success: true, bookedRanges });
+    } catch (error) {
+        res.json({ success: false, message: error.message });
+    }
+}
+
 
 // api to check car availability
 export const checkAvailabilityOfCar = async (req, res) => {

@@ -6,13 +6,25 @@ import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
 import MapComponent from '../components/MapComponent';
 import ChatWidget from '../components/ChatWidget';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 
 const CarDetails = () => {
   const {id} = useParams();
   const {cars,axios,pickupDate,setPickupDate,returnDate,setReturnDate} = useAppContext();
   const navigate = useNavigate();
   const [car,setCar] = useState(null);
+  const [bookedDates, setBookedDates] = useState([]);
   const currency = import.meta.env.VITE_CURRENCY;
+  
+  // Convert standard JS Date to YYYY-MM-DD
+  const formatDate = (date) => {
+    if (!date) return '';
+    // Adjust for local timezone offset when generating ISO string
+    const offset = date.getTimezoneOffset();
+    const adjustedDate = new Date(date.getTime() - (offset*60*1000));
+    return adjustedDate.toISOString().split('T')[0];
+  };
 
   const handleSubmit = async(e) => {
     e.preventDefault();
@@ -36,6 +48,30 @@ const CarDetails = () => {
   useEffect(()=>{
     setCar(cars.find(car => car._id === id))
   },[cars,id])
+
+  // Fetch booked date ranges for calendar
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        const { data } = await axios.get(`/api/bookings/car/${id}/dates`);
+        if (data.success) {
+          const disabledDates = [];
+          data.bookedRanges.forEach(range => {
+            let current = new Date(range.start);
+            const end = new Date(range.end);
+            while (current <= end) {
+              disabledDates.push(new Date(current));
+              current.setDate(current.getDate() + 1);
+            }
+          });
+          setBookedDates(disabledDates);
+        }
+      } catch (error) {
+        console.error("Failed to fetch blocked dates", error);
+      }
+    };
+    if (id) fetchBookings();
+  }, [id, axios]);
 
   if (!car) return <Loader/>;
 
@@ -107,23 +143,26 @@ const CarDetails = () => {
             <hr className='border-borderColor my-6'/>
             <div className='flex flex-col gap-2'>
               <label htmlFor="pickup-date">Pickup Date</label>
-              <input
-                value={pickupDate}
-                onChange={(e)=>setPickupDate(e.target.value)}
-                type="date"
-                className='border border-borderColor px-3 py-2 rounded-lg'
+              <DatePicker
+                selected={pickupDate ? new Date(pickupDate) : null}
+                onChange={(date) => setPickupDate(formatDate(date))}
+                excludeDates={bookedDates}
+                minDate={new Date()}
+                className='border border-borderColor w-full px-3 py-2 rounded-lg'
+                placeholderText="Select pickup date"
                 required
                 id='pickup-date'
-                min={new Date().toISOString().split('T')[0]}
               />
             </div>
             <div className='flex flex-col gap-2'>
               <label htmlFor="return-date">Return Date</label>
-              <input
-                value={returnDate}
-                onChange={(e)=>setReturnDate(e.target.value)}
-                type="date"
-                className='border border-borderColor px-3 py-2 rounded-lg'
+              <DatePicker
+                selected={returnDate ? new Date(returnDate) : null}
+                onChange={(date) => setReturnDate(formatDate(date))}
+                excludeDates={bookedDates}
+                minDate={pickupDate ? new Date(pickupDate) : new Date()}
+                className='border border-borderColor w-full px-3 py-2 rounded-lg'
+                placeholderText="Select return date"
                 required
                 id='return-date'
               />

@@ -1,5 +1,5 @@
 import express from 'express';
-import { changeBookingStatus, checkAvailabilityOfCar, createBooking, getOwnerBookings, getUserBookings } from '../controllers/bookingController.js';
+import { changeBookingStatus, checkAvailabilityOfCar, createBooking, getOwnerBookings, getUserBookings, getCarBookedDates } from '../controllers/bookingController.js';
 import { protect } from '../middleware/auth.js';
 
 
@@ -10,5 +10,6 @@ bookingRouter.post('/create',protect,createBooking);
 bookingRouter.get('/user',protect,getUserBookings);
 bookingRouter.get('/owner',protect,getOwnerBookings);
 bookingRouter.post('/change-status',protect,changeBookingStatus);
+bookingRouter.get('/car/:carId/dates', getCarBookedDates);
 
 export default bookingRouter;

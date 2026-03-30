@@ -1,11 +1,18 @@
-import React from 'react'
-import { assets, cityList } from '../assets/assets'
-import { useState } from 'react'
+import React, { useState, useMemo } from 'react'
+import { assets } from '../assets/assets'
 import { useAppContext } from '../context/AppContext'
 
 const Hero = () => {
     const[pickupLocation,setPickupLocation] = useState('')
-    const {pickupDate,setPickupDate,returnDate,setReturnDate,navigate} = useAppContext();
+    const {cars, pickupDate,setPickupDate,returnDate,setReturnDate,navigate} = useAppContext();
+    
+    // Dynamically get unique locations from all available cars
+    const uniqueLocations = useMemo(() => {
+      if (!cars) return [];
+      const locs = cars.map(car => car.location).filter(Boolean);
+      return [...new Set(locs)].sort();
+    }, [cars]);
+
     const handleSearch = (e)=>{
       e.preventDefault();
       navigate('/cars?pickupLocation=' + pickupLocation + '&pickupDate=' + pickupDate + '&returnDate=' + returnDate);
@@ -23,9 +30,11 @@ const Hero = () => {
                 <div className='flex flex-col items-start gap-2'>
                     <select required value={pickupLocation} onChange={(e)=>setPickupLocation(e.target.value)} >
                         <option value="">Pickup Location</option>
-                        {cityList.map((city)=><option key={city} value={city}>{city}</option>)}
+                        {uniqueLocations.map((city)=><option key={city} value={city}>{city}</option>)}
                     </select>
-                    <p className='px-1 text-sm text-gray-500'>{pickupLocation ? pickupLocation : "Please select location"}</p>
+                    <p className='px-1 text-sm text-gray-500'>
+                      {pickupLocation ? pickupLocation : "Please select location"}
+                    </p>
                 </div>
                 <div className='flex flex-col items-start gap-2'>
                     <label htmlFor="pickup-date">Pick-up Date</label>
