@@ -4,90 +4,94 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 
-// Fix for default marker icons in Leaflet with React
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
+// Fix broken default marker icons in Vite/React builds
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-L.Marker.prototype.options.icon = DefaultIcon;
-
-// Custom hook to automatically adjust map bounds to fit all markers
-const ChangeView = ({ center, zoom, bounds }) => {
+// Auto-fit bounds when markers change
+const FitBounds = ({ bounds }) => {
   const map = useMap();
   useEffect(() => {
     if (bounds && bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [50, 50] });
-    } else if (center) {
-      map.setView(center, zoom);
+      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
     }
-  }, [center, zoom, bounds, map]);
+  }, [bounds, map]);
   return null;
+};
+
+const generateHashCoords = (str) => {
+  const base = [40.7128, -74.006]; // NYC fallback center
+  let hash = 0;
+  const safeStr = str || 'unknown';
+  for (let i = 0; i < safeStr.length; i++) {
+    hash = safeStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return [base[0] + (hash % 100) / 500, base[1] + ((hash >> 4) % 100) / 500];
 };
 
 const MapComponent = ({ cars }) => {
   const navigate = useNavigate();
-  // Default center (e.g., somewhere central or dynamic based on active data)
-  const defaultCenter = [40.7128, -74.0060]; // NYC as default
-  
-  const generateHashCoords = (str) => {
-    let hash = 0;
-    const safeStr = str || "unknown";
-    for (let i = 0; i < safeStr.length; i++) {
-      hash = safeStr.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const plat = defaultCenter[0] + (hash % 100) / 1000;
-    const plng = defaultCenter[1] + ((hash >> 4) % 100) / 1000;
-    return [plat, plng];
-  };
 
-  const markers = cars.filter(c => c.isAvailable).map(car => {
-    const lat = car.latitude !== undefined && car.latitude !== null ? car.latitude : generateHashCoords(car.location)[0];
-    const lng = car.longitude !== undefined && car.longitude !== null ? car.longitude : generateHashCoords(car.location)[1];
-    return {
-      ...car,
-      position: [lat, lng]
-    };
-  });
+  const markers = (cars || [])
+    .filter(c => c && c.isAvailable)
+    .map(car => {
+      const lat =
+        car.latitude != null && !isNaN(car.latitude)
+          ? car.latitude
+          : generateHashCoords(car.location)[0];
+      const lng =
+        car.longitude != null && !isNaN(car.longitude)
+          ? car.longitude
+          : generateHashCoords(car.location)[1];
+      return { ...car, position: [lat, lng] };
+    });
 
-  const bounds = markers.length > 0 ? markers.map(m => m.position) : [];
+  const bounds = markers.map(m => m.position);
 
   return (
-    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 0 }}>
-      <MapContainer 
-        center={defaultCenter} 
-        zoom={12} 
-        style={{ width: '100%', height: '100%', minHeight: '100%' }}
-        scrollWheelZoom={true}
-      >
-        <ChangeView center={defaultCenter} zoom={12} bounds={bounds.length > 0 ? bounds : null} />
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        {markers.map((car, idx) => (
-          <Marker key={car._id || idx} position={car.position}>
-            <Popup>
-              <div 
-                className="cursor-pointer" 
-                onClick={() => navigate(`/car-details/${car._id}`)}
-              >
-                <img src={car.image} alt={car.brand} className="w-full h-24 object-cover rounded-md mb-2" />
-                <p className="font-semibold text-sm">{car.brand} {car.model}</p>
-                <p className="text-xs text-gray-500">{car.location}</p>
-                <p className="font-bold text-primary mt-1">${car.pricePerDay}/day</p>
-                <p className="text-xs text-yellow-500 mt-1">★ {car.rating || 5}</p>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-    </div>
+    <MapContainer
+      center={[40.7128, -74.006]}
+      zoom={10}
+      style={{ width: '100%', height: '100%' }}
+      scrollWheelZoom
+      zoomControl
+    >
+      {bounds.length > 0 && <FitBounds bounds={bounds} />}
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      {markers.map((car, idx) => (
+        <Marker key={car._id || idx} position={car.position}>
+          <Popup minWidth={180}>
+            <div
+              onClick={() => navigate(`/car-details/${car._id}`)}
+              style={{ cursor: 'pointer' }}
+            >
+              <img
+                src={car.image}
+                alt={car.brand}
+                style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '6px', marginBottom: '6px' }}
+              />
+              <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>
+                {car.brand} {car.model}
+              </p>
+              <p style={{ color: '#888', fontSize: '11px', margin: '2px 0' }}>{car.location}</p>
+              <p style={{ fontWeight: 700, fontSize: '13px', color: '#2563eb', margin: '4px 0 2px' }}>
+                ${car.pricePerDay}/day
+              </p>
+              <p style={{ color: '#f59e0b', fontSize: '11px', margin: 0 }}>
+                {'★'.repeat(Math.round(car.rating || 5))} {car.rating || 5}
+              </p>
+            </div>
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
   );
 };
 
