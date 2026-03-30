@@ -35,23 +35,20 @@ const MapComponent = ({ cars }) => {
   // Default center (e.g., somewhere central or dynamic based on active data)
   const defaultCenter = [40.7128, -74.0060]; // NYC as default
   
-  // Try to generate bounds if cars have coordinates
-  // Or provide pseudo coordinates based on string hashes if none exist (for demo purposes)
   const generateHashCoords = (str) => {
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    const safeStr = str || "unknown";
+    for (let i = 0; i < safeStr.length; i++) {
+      hash = safeStr.charCodeAt(i) + ((hash << 5) - hash);
     }
-    // Randomize slightly around the default center based on the location string
     const plat = defaultCenter[0] + (hash % 100) / 1000;
     const plng = defaultCenter[1] + ((hash >> 4) % 100) / 1000;
     return [plat, plng];
   };
 
   const markers = cars.filter(c => c.isAvailable).map(car => {
-    // If DB lacks coordinates, mock them based on the location name so they are consistently placed
-    const lat = car.latitude !== undefined ? car.latitude : generateHashCoords(car.location)[0];
-    const lng = car.longitude !== undefined ? car.longitude : generateHashCoords(car.location)[1];
+    const lat = car.latitude !== undefined && car.latitude !== null ? car.latitude : generateHashCoords(car.location)[0];
+    const lng = car.longitude !== undefined && car.longitude !== null ? car.longitude : generateHashCoords(car.location)[1];
     return {
       ...car,
       position: [lat, lng]
@@ -61,11 +58,11 @@ const MapComponent = ({ cars }) => {
   const bounds = markers.length > 0 ? markers.map(m => m.position) : [];
 
   return (
-    <div className="w-full h-full min-h-[400px] md:min-h-full bg-gray-100 z-0 relative rounded-xl overflow-hidden border">
+    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 0 }}>
       <MapContainer 
         center={defaultCenter} 
         zoom={12} 
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: '100%', height: '100%', minHeight: '100%' }}
         scrollWheelZoom={true}
       >
         <ChangeView center={defaultCenter} zoom={12} bounds={bounds.length > 0 ? bounds : null} />
@@ -73,8 +70,8 @@ const MapComponent = ({ cars }) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {markers.map((car) => (
-          <Marker key={car._id} position={car.position}>
+        {markers.map((car, idx) => (
+          <Marker key={car._id || idx} position={car.position}>
             <Popup>
               <div 
                 className="cursor-pointer" 
