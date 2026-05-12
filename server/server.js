@@ -24,7 +24,26 @@ await connectRedis();
 
 //middleware
 
-app.use(cors());
+const allowedOrigins = [process.env.CLIENT_URL, process.env.VERCEL_URL]
+  .filter(Boolean)
+  .map((origin) => origin.startsWith("http") ? origin : `https://${origin}`);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+app.options("*", cors());
 
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());

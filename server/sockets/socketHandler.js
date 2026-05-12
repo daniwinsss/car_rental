@@ -5,9 +5,13 @@ import User from "../models/User.js";
 let ioInstance = null;
 
 export const initSocket = (server) => {
+  const allowedOrigins = [process.env.CLIENT_URL, process.env.VERCEL_URL]
+    .filter(Boolean)
+    .map((origin) => origin.startsWith("http") ? origin : `https://${origin}`);
+
   const io = new Server(server, {
     cors: {
-      origin: "*",
+      origin: allowedOrigins.length ? allowedOrigins : "*",
     },
   });
 
