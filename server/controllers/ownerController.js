@@ -3,16 +3,17 @@ import User from "../models/User.js";
 import fs from 'fs';
 import imagekit from "../configs/imageKit.js";
 import Booking from '../models/Booking.js';
+import { successResponse } from "../utils/response.js";
+import { deleteCache, getCache, setCache } from "../utils/cache.js";
 
 //api to change role
 export const changeRoleToOwner = async(req,res)=>{
     try {
         const {_id} = req.user;
         await User.findByIdAndUpdate(_id,{role:"owner"});
-        res.json({success: true,message : "Now you can list cars"})
+        return successResponse(res, { message: "Now you can list cars" });
     } catch (error) {
-        console.log(error.message);
-        res.json({success: false,message : error.message})
+        return res.status(500).json({success: false,message : error.message})
     }
 }
 
@@ -44,10 +45,11 @@ export const addCar = async(req,res)=>{
          
         const image = optimizedImageURL;
         await Car.create({...car,owner:_id,image})
-        res.json({success:true,message : 'Car Added'})
+        await deleteCache("cars");
+        await deleteCache(`dashboard:${_id}`);
+        return successResponse(res, { message: "Car Added" });
     } catch (error) {
-        console.log(error.message);
-        res.json({success: false,message : error.message})
+        return res.status(500).json({success: false,message : error.message})
     }
 }
 
@@ -56,10 +58,9 @@ export const getOwnerCars = async (req,res)=>{
     try {
         const {_id} = req.user;
         const cars = await Car.find({owner:_id})
-        res.json({success:true,cars});
+        return successResponse(res, { message: "Owner cars fetched", data: { cars } });
     } catch (error) {
-        console.log(error.message);
-        res.json({success: false,message : error.message})
+        return res.status(500).json({success: false,message : error.message})
     }
 }
 
@@ -72,14 +73,15 @@ export const toggleCarAvailability = async (req,res)=>{
         const car = await Car.findById(carId);
         //checking car belong to user
         if(car.owner.toString() !==_id.toString()){
-           return res.json({success:false,message : "unauthorized"});
+           return res.status(403).json({success:false,message : "unauthorized"});
         }
         car.isAvailable = !car.isAvailable;
         await car.save();
-        res.json({success:true,message : "Availability toggled"});
+        await deleteCache("cars");
+        await deleteCache(`dashboard:${_id}`);
+        return successResponse(res, { message: "Availability toggled" });
     } catch (error) {
-        console.log(error.message);
-        res.json({success: false,message : error.message})
+        return res.status(500).json({success: false,message : error.message})
     }
 }
 
@@ -91,17 +93,18 @@ export const deleteCar = async (req,res)=>{
         const car = await Car.findById(carId);
         //checking car belong to user
         if(car.owner.toString() !==_id.toString()){
-            return res.json({success:false,message : "unauthorized"});
+            return res.status(403).json({success:false,message : "unauthorized"});
         }
         car.isAvailable = !car.isAvailable;
         car.owner = null;
         car.isAvailable = false;
 
         await car.save();
-        res.json({success:true,message : "Car Removed"});
+        await deleteCache("cars");
+        await deleteCache(`dashboard:${_id}`);
+        return successResponse(res, { message: "Car Removed" });
     } catch (error) {
-        console.log(error.message);
-        res.json({success: false,message : error.message})
+        return res.status(500).json({success: false,message : error.message})
     }
 }
 //api to get dashboard data
@@ -110,7 +113,12 @@ export const getDashboardData = async(req,res)=>{
     try {
         const {_id,role} = req.user;
         if(role !== 'owner'){
-            return res.json({success:false,message : "unauthorized"});
+            return res.status(403).json({success:false,message : "unauthorized"});
+        }
+        const cacheKey = `dashboard:${_id}`;
+        const cached = await getCache(cacheKey);
+        if (cached) {
+            return successResponse(res, { message: "Dashboard data fetched", data: { dashboardData: cached } });
         }
         const cars = await Car.find({owner: _id});
         const bookings = await Booking.find({owner:_id}).populate('car').
@@ -131,10 +139,10 @@ export const getDashboardData = async(req,res)=>{
             recentBookings: bookings.slice(0,3),
             monthlyRevenue
         }
-        res.json({success:true,dashboardData});
+        await setCache(cacheKey, dashboardData, 30);
+        return successResponse(res, { message: "Dashboard data fetched", data: { dashboardData } });
     } catch (error) {
-        console.log(error.message);
-        res.json({success: false,message : error.message})
+        return res.status(500).json({success: false,message : error.message})
     }
 }
 // api to update user pic
@@ -162,11 +170,10 @@ export const updateUserImage = async (req, res) => {
         const image = optimizedImageUrl;
 
         await User.findByIdAndUpdate(_id, { image });
-        res.json({ success: true, message: "Image Updated" });
+        return successResponse(res, { message: "Image Updated" });
     } 
     catch (error) {
-        console.log(error.message);
-        res.json({ success: false, message: error.message });
+        return res.status(500).json({ success: false, message: error.message });
     }
-}    
+}
 

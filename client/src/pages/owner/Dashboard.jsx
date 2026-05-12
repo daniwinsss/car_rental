@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { assets, dummyDashboardData } from '../../assets/assets';
 import Title from '../../components/owner/Title'
 import { useAppContext } from '../../context/AppContext';
+import { getSocket } from "../../socket";
 const Dashboard = () => {
   const {axios,isOwner,currency,toast} = useAppContext();
   const [data,setData] = useState({
@@ -29,6 +30,24 @@ const Dashboard = () => {
       fetchDashboardData()
     }
   },[isOwner])
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
+    const handler = () => fetchDashboardData();
+    socket.on("newBooking", handler);
+    socket.on("bookingConfirmed", handler);
+    socket.on("bookingCancelled", handler);
+    socket.on("paymentSuccessful", handler);
+    socket.on("availabilityUpdated", handler);
+    return () => {
+      socket.off("newBooking", handler);
+      socket.off("bookingConfirmed", handler);
+      socket.off("bookingCancelled", handler);
+      socket.off("paymentSuccessful", handler);
+      socket.off("availabilityUpdated", handler);
+    };
+  }, []);
   const dashboardCards = [
     {
       title : "Total Cars",

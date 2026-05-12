@@ -2,6 +2,8 @@ import User from "../models/User.js";
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken';
 import Car from "../models/Car.js";
+import { successResponse } from "../utils/response.js";
+import { getCache, setCache } from "../utils/cache.js";
 
 //jwt token
 const generateToken = (userId)=>{
@@ -13,20 +15,19 @@ export const registerUser = async(req,res) =>{
     try {
         const {name,email,password} = req.body;
         if(!name || !email || !password || password.length < 8){
-            return res.json({success : false,message : 'fill all the fields'})
+            return res.status(400).json({success : false,message : 'fill all the fields'})
         }
         const userExists = await User.findOne({email})
         if(userExists){
-            return res.json({success : false,message : 'User already exists'})
+            return res.status(409).json({success : false,message : 'User already exists'})
         }
         const hashedPassword = await bcrypt.hash(password,10);
         const user = await User.create({name,email,password: hashedPassword});
         const token =  generateToken(user._id.toString());
-        res.json({success : true,token})
+        return successResponse(res, { message: "Registration successful", data: { token } });
 
     } catch (error) {
-        console.log(error.message);
-        res.json({success : false,message : error.message})
+        return res.status(500).json({success : false,message : error.message})
     }
 } 
 
@@ -37,17 +38,16 @@ export const loginUser = async(req,res) =>{
         const {email,password} = req.body
         const user = await User.findOne({email});
         if(!user){
-            return res.json({success : false,message : "User not found"})
+            return res.status(404).json({success : false,message : "User not found"})
         }
         const isMatch = await bcrypt.compare(password,user.password);
         if(!isMatch){
-            return res.json({success : false,message : "Invalid credentials"})
+            return res.status(401).json({success : false,message : "Invalid credentials"})
         }
         const token =  generateToken(user._id.toString());
-        res.json({success : true,token})
+        return successResponse(res, { message: "Login successful", data: { token } });
     } catch (error) {
-        console.log(error.message);
-        res.json({success : false,message : error.message})
+        return res.status(500).json({success : false,message : error.message})
     }
 }
 
@@ -57,20 +57,24 @@ export const loginUser = async(req,res) =>{
 export const getUserData = async(req,res)=>{
     try {
         const {user} = req;
-        res.json({success : true,user})
+        return successResponse(res, { message: "User data fetched", data: { user } });
     } catch (error) {
-        console.log(error.message);
-        res.json({success : false,message : error.message})
+        return res.status(500).json({success : false,message : error.message})
     }
 }
 
 //get all cars for frontend
 export const getCars = async(req,res)=>{
     try {
+        const cacheKey = "cars";
+        const cached = await getCache(cacheKey);
+        if (cached) {
+            return successResponse(res, { message: "Cars fetched", data: { cars: cached } });
+        }
         const cars = await Car.find({isAvailable:true});
-        res.json({success : true,cars})
+        await setCache(cacheKey, cars, 60);
+        return successResponse(res, { message: "Cars fetched", data: { cars } });
     } catch (error) {
-        console.log(error.message);
-        res.json({success : false,message : error.message})
+        return res.status(500).json({success : false,message : error.message})
     }
 }

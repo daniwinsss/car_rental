@@ -9,9 +9,16 @@ const bookingSchema = new mongoose.Schema({
   returnDate: {type: Date, required: true},
   status: {
     type: String,
-    enum: ["pending", "confirmed", "cancelled"],
+    enum: ["pending_payment", "confirmed", "cancelled", "expired"],
+    default: "pending_payment"
+  },
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "paid", "failed"],
     default: "pending"
   },
+  stripeSessionId: { type: String },
+  paymentIntentId: { type: String },
   price: {type: Number, required: true}
 }, {timestamps: true});
 

@@ -2,6 +2,7 @@ import React,{ createContext, useContext, useState,useEffect } from "react";
 import axios from "axios";
 import {toast} from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { initSocket } from "../socket";
 
 axios.defaults.baseURL = import.meta.env.VITE_BASE_URL;
 
@@ -65,6 +66,7 @@ export const AppProvider = ({children})=>{
         if(token){
             axios.defaults.headers.common['Authorization'] = `${token}`
             fetchUser();
+            initSocket(token);
         }
     },[token])
     const value = {

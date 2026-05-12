@@ -34,11 +34,18 @@ const CarDetails = () => {
         pickupDate,
         returnDate
       })
-      if(data.success){
-        toast.success(data.message);
-        navigate('/my-bookings');
+      if(!data.success){
+        return toast.error(data.message);
+      }
+      const bookingId = data?.data?.bookingId;
+      if (!bookingId) {
+        return toast.error('Booking created, but no payment session available');
+      }
+      const sessionRes = await axios.post('/api/payments/create-checkout-session', { bookingId });
+      if (sessionRes.data?.success) {
+        window.location.href = sessionRes.data.data.url;
       } else {
-        toast.error(data.message);
+        toast.error(sessionRes.data?.message || 'Payment session failed');
       }
     } catch (error) {
       toast.error(error.message);
@@ -170,7 +177,7 @@ const CarDetails = () => {
             <button className='w-full bg-primary hover:bg-primary-dull transition-all py-3 font-medium text-white rounded-xl cursor-pointer'>
               Book Now
             </button>
-            <p className='text-center text-sm'>No credit card required to reserve</p>
+            <p className='text-center text-sm'>Secure payment required to confirm booking</p>
           </form>
         </div>
       </div>
