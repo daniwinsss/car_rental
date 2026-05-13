@@ -11,7 +11,7 @@ const MyBookings = () => {
     try{
       const {data} = await axios.get('/api/bookings/user');
       if(data.success){
-        setBookings(data.bookings);
+        setBookings(data.data.bookings);
       }
       else{
         toast.error(data.message);
