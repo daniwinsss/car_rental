@@ -20,8 +20,12 @@ const app = express();
 let isInitialized = false;
 const ensureInitialized = async () => {
   if (isInitialized) return;
+  console.log("Initializing database connection...");
   await connectDB();
-  await connectRedis();
+  
+  // Connect Redis in background to avoid blocking startup
+  connectRedis().catch(err => console.error("Background Redis connection failed:", err));
+  
   isInitialized = true;
 };
 
