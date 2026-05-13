@@ -71,7 +71,8 @@ app.use(async (req, res, next) => {
     await ensureInitialized();
     next();
   } catch (error) {
-    next(error);
+    // Return a response instead of leaving requests pending when init fails.
+    return res.status(500).json({ success: false, message: error.message || 'Server initialization failed' });
   }
 });
 
