@@ -12,8 +12,8 @@ function Login() {
             const {data} = await axios.post(`/api/user/${state}`,{name,email,password})
             if(data.success){
                 navigate('/');
-                setToken(data.token);
-                localStorage.setItem('token',data.token);
+                setToken(data.data.token);
+                localStorage.setItem('token',data.data.token);
                 setShowLogin(false);
             }
             else{

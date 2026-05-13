@@ -24,8 +24,8 @@ export const AppProvider = ({ children }) => {
         try {
             const { data } = await axios.get("/api/user/data");
             if (data.success) {
-                setUser(data.user);
-                setIsOwner(data.user.role === "owner");
+                setUser(data.data.user);
+                setIsOwner(data.data.user.role === "owner");
             } else {
                 navigate("/");
             }
@@ -38,7 +38,7 @@ export const AppProvider = ({ children }) => {
         try {
             const { data } = await axios.get("/api/user/cars");
             if (data.success) {
-                setCars(data.cars);
+                setCars(data.data.cars);
             } else {
                 toast.error(data.message);
             }
