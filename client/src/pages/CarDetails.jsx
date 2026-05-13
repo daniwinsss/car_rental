@@ -17,18 +17,35 @@ const CarDetails = () => {
   const [bookedDates, setBookedDates] = useState([]);
   const currency = import.meta.env.VITE_CURRENCY;
   
-  // Convert standard JS Date to YYYY-MM-DD
-  const formatDate = (date) => {
+  const toInputDate = (date) => {
     if (!date) return '';
-    // Adjust for local timezone offset when generating ISO string
-    const offset = date.getTimezoneOffset();
-    const adjustedDate = new Date(date.getTime() - (offset*60*1000));
-    return adjustedDate.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const fromInputDate = (value) => {
+    if (!value) return null;
+    return new Date(`${value}T00:00:00`);
+  };
+
+  const getTotalDays = (start, end) => {
+    const startDate = fromInputDate(start);
+    const endDate = fromInputDate(end);
+    if (!startDate || !endDate) return 0;
+    const diffMs = endDate.getTime() - startDate.getTime();
+    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return Number.isFinite(days) && days > 0 ? days : 0;
   };
 
   const handleSubmit = async(e) => {
     e.preventDefault();
     try {
+      const totalDays = getTotalDays(pickupDate, returnDate);
+      if (!pickupDate || !returnDate || totalDays === 0) {
+        return toast.error('Please select a valid pickup and return date');
+      }
       const {data} = await axios.post('/api/bookings/create',{
         car: id,
         pickupDate,
@@ -81,6 +98,9 @@ const CarDetails = () => {
   }, [id, axios]);
 
   if (!car) return <Loader/>;
+
+  const totalDays = getTotalDays(pickupDate, returnDate);
+  const totalPrice = totalDays > 0 ? totalDays * car.pricePerDay : 0;
 
   return (
     <>
@@ -151,8 +171,14 @@ const CarDetails = () => {
             <div className='flex flex-col gap-2'>
               <label htmlFor="pickup-date">Pickup Date</label>
               <DatePicker
-                selected={pickupDate ? new Date(pickupDate) : null}
-                onChange={(date) => setPickupDate(formatDate(date))}
+                selected={fromInputDate(pickupDate)}
+                onChange={(date) => {
+                  const value = toInputDate(date);
+                  setPickupDate(value);
+                  if (returnDate && getTotalDays(value, returnDate) === 0) {
+                    setReturnDate('');
+                  }
+                }}
                 excludeDates={bookedDates}
                 minDate={new Date()}
                 className='border border-borderColor w-full px-3 py-2 rounded-lg'
@@ -164,15 +190,21 @@ const CarDetails = () => {
             <div className='flex flex-col gap-2'>
               <label htmlFor="return-date">Return Date</label>
               <DatePicker
-                selected={returnDate ? new Date(returnDate) : null}
-                onChange={(date) => setReturnDate(formatDate(date))}
+                selected={fromInputDate(returnDate)}
+                onChange={(date) => setReturnDate(toInputDate(date))}
                 excludeDates={bookedDates}
-                minDate={pickupDate ? new Date(pickupDate) : new Date()}
+                minDate={pickupDate ? fromInputDate(pickupDate) : new Date()}
                 className='border border-borderColor w-full px-3 py-2 rounded-lg'
                 placeholderText="Select return date"
                 required
                 id='return-date'
               />
+            </div>
+            <div className='flex items-center justify-between text-sm'>
+              <span>Total ({totalDays || 0} {totalDays === 1 ? 'day' : 'days'})</span>
+              <span className='font-semibold text-gray-800'>
+                {currency}{totalPrice || 0}
+              </span>
             </div>
             <button className='w-full bg-primary hover:bg-primary-dull transition-all py-3 font-medium text-white rounded-xl cursor-pointer'>
               Book Now
