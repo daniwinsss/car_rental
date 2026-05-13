@@ -5,6 +5,7 @@ const errorHandler = (err, req, res, next) => {
   const message = err.message || "Internal server error";
   const error = err.details || err.error || null;
 
+  console.error("ErrorHandler caught:", err);
   return errorResponse(res, { message, error, status });
 };
 

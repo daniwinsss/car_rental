@@ -47,7 +47,7 @@ app.use(
 );
 
 app.options(
-  "/*",
+  /.*/,
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
