@@ -9,13 +9,24 @@ import Notification from "../models/Notification.js";
 
 
 //funct check availability of car for a given date
-const checkAvailability = async (car, pickupDate, returnDate) => {
-    const bookings = await Booking.find({
+const checkAvailability = async (car, pickupDate, returnDate, userId = null) => {
+    const query = {
         car,
         status: { $ne: 'cancelled' },
         pickupDate: { $lte: returnDate },
         returnDate: { $gte: pickupDate },
-    })
+    };
+
+    if (userId) {
+        // Ignore ONLY the user's own pending_payment bookings
+        // We still want to find (other people's bookings) OR (user's own confirmed bookings)
+        query.$or = [
+            { user: { $ne: userId } },
+            { status: { $ne: 'pending_payment' } }
+        ];
+    }
+
+    const bookings = await Booking.find(query);
     return bookings.length === 0;
 }
 
@@ -75,7 +86,7 @@ export const createBooking = async (req, res) => {
     try {
         const { _id } = req.user;
         const { car, pickupDate, returnDate } = req.body;
-        const isAvailable = await checkAvailability(car, pickupDate, returnDate);
+        const isAvailable = await checkAvailability(car, pickupDate, returnDate, _id);
         if (!isAvailable) {
             return res.status(409).json({ success: false, message: "Car is not available for the selected dates" });
         }
