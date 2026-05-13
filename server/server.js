@@ -17,10 +17,13 @@ import paymentRouter from './routes/paymentRoutes.js';
 
 const app = express();
 
-//connect database
-
-await connectDB();
-await connectRedis();
+let isInitialized = false;
+const ensureInitialized = async () => {
+  if (isInitialized) return;
+  await connectDB();
+  await connectRedis();
+  isInitialized = true;
+};
 
 //middleware
 
@@ -59,6 +62,15 @@ app.options(
   })
 );
 
+app.use(async (req, res, next) => {
+  try {
+    await ensureInitialized();
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 
@@ -76,5 +88,9 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 
-const server = app.listen(PORT,()=>console.log(`Server running on port ${PORT}`))
-initSocket(server);
+if (!process.env.VERCEL) {
+  const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  initSocket(server);
+}
+
+export default app;
