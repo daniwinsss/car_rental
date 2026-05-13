@@ -63,7 +63,7 @@ const CarDetails = () => {
         const { data } = await axios.get(`/api/bookings/car/${id}/dates`);
         if (data.success) {
           const disabledDates = [];
-          data.bookedRanges.forEach(range => {
+          data.data.bookedRanges.forEach(range => {
             let current = new Date(range.start);
             const end = new Date(range.end);
             while (current <= end) {

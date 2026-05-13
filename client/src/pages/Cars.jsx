@@ -75,8 +75,8 @@ const Cars = () => {
         location: pickupLocation, pickupDate, returnDate
       });
       if (data.success) {
-        applyFiltersAndSort(data.availableCars);
-        if (data.availableCars.length === 0) toast.error("No cars available for these dates");
+        applyFiltersAndSort(data.data.availableCars);
+        if (data.data.availableCars.length === 0) toast.error("No cars available for these dates");
       }
     } catch (error) {
       toast.error('Error finding available cars');
