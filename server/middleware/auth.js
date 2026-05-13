@@ -7,13 +7,15 @@ export const protect = async(req,res,next) =>{
         return res.status(401).json({success:false,message: "not authorized"});
     }
     try {
-        const userId = jwt.decode(token,process.env.JWT_SECRET);
+        const tokenString = token.startsWith("Bearer ") ? token.split(" ")[1] : token;
+        const userId = jwt.verify(tokenString, process.env.JWT_SECRET);
         if(!userId){
             return res.status(401).json({success:false,message:"not authorized"})
         }
         req.user = await User.findById(userId).select("-password");
         next();
     } catch (error) {
+        console.error("Auth error:", error);
         return res.status(401).json({success:false,message: "not authorized"});
     }
 }
