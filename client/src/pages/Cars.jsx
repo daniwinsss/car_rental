@@ -29,17 +29,18 @@ const Cars = () => {
   const isSearchData = pickupLocation && pickupDate && returnDate;
 
   // Unique option lists from car data
-  const categories = [...new Set(cars.map(c => c.category))].filter(Boolean);
-  const transmissions = [...new Set(cars.map(c => c.transmission))].filter(Boolean);
-  const fuelTypes = [...new Set(cars.map(c => c.fuel_type))].filter(Boolean);
-  const seatOptions = [...new Set(cars.map(c => c.seating_capacity))].filter(Boolean).sort((a, b) => a - b);
+  const safeCars = Array.isArray(cars) ? cars : [];
+  const categories = [...new Set(safeCars.map(c => c.category))].filter(Boolean);
+  const transmissions = [...new Set(safeCars.map(c => c.transmission))].filter(Boolean);
+  const fuelTypes = [...new Set(safeCars.map(c => c.fuel_type))].filter(Boolean);
+  const seatOptions = [...new Set(safeCars.map(c => c.seating_capacity))].filter(Boolean).sort((a, b) => a - b);
 
   useEffect(() => {
-    if (cars.length > 0) {
-      const highest = Math.max(...cars.map(c => c.pricePerDay));
+    if (safeCars.length > 0) {
+      const highest = Math.max(...safeCars.map(c => c.pricePerDay));
       if (highest > maxPrice) setMaxPrice(Math.ceil(highest / 100) * 100);
     }
-  }, [cars]);
+  }, [safeCars]);
 
   const applyFiltersAndSort = (sourceCars) => {
     const carList = Array.isArray(sourceCars) ? sourceCars : [];
@@ -86,10 +87,10 @@ const Cars = () => {
   useEffect(() => {
     if (isSearchData) {
       searchCarAvailability();
-    } else if (cars.length > 0) {
-      applyFiltersAndSort(cars);
+    } else if (safeCars.length > 0) {
+      applyFiltersAndSort(safeCars);
     }
-  }, [input, category, transmission, fuelType, seats, maxPrice, sortBy, cars]);
+  }, [input, category, transmission, fuelType, seats, maxPrice, sortBy, safeCars]);
 
   return (
     <div className="bg-gray-50 min-h-screen">

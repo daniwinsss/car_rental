@@ -11,7 +11,8 @@ const MyBookings = () => {
     try{
       const {data} = await axios.get('/api/bookings/user');
       if(data.success){
-        setBookings(data.data.bookings);
+        const safeBookings = Array.isArray(data?.data?.bookings) ? data.data.bookings : [];
+        setBookings(safeBookings);
       }
       else{
         toast.error(data.message);

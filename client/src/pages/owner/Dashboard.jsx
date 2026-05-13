@@ -16,7 +16,15 @@ const Dashboard = () => {
     try {
       const {data} = await axios.get('/api/owner/dashboard');
       if(data.success){
-        setData(data.data.dashboardData)
+        const safeDashboard = data?.data?.dashboardData || {};
+        setData({
+          totalCars: safeDashboard.totalCars ?? 0,
+          totalBookings: safeDashboard.totalBookings ?? 0,
+          pendingBookings: safeDashboard.pendingBookings ?? 0,
+          recentBookings: Array.isArray(safeDashboard.recentBookings) ? safeDashboard.recentBookings : [],
+          monthlyRevenue: safeDashboard.monthlyRevenue ?? 0,
+          completedBookings: safeDashboard.completedBookings ?? 0,
+        })
       }
       else{
         toast.error(data.message);
