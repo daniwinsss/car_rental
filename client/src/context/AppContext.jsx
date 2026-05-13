@@ -66,7 +66,9 @@ export const AppProvider = ({children})=>{
         if(token){
             axios.defaults.headers.common['Authorization'] = `${token}`
             fetchUser();
-            initSocket(token);
+            if (!import.meta.env.PROD) {
+                initSocket(token);
+            }
         }
     },[token])
     const value = {

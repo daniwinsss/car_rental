@@ -4,25 +4,27 @@ import { useAppContext } from '../context/AppContext';
 
 // Parse AI reply text and extract [CAR_ID:xxx] tokens
 const parseReply = (text, cars) => {
+  const safeText = text || '';
+  const carList = Array.isArray(cars) ? cars : [];
   const carIdRegex = /\[CAR_ID:([a-f0-9]+)\]/g;
   const parts = [];
   let lastIndex = 0;
   let match;
 
-  while ((match = carIdRegex.exec(text)) !== null) {
+  while ((match = carIdRegex.exec(safeText)) !== null) {
     // Push text before the tag
     if (match.index > lastIndex) {
-      parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+      parts.push({ type: 'text', content: safeText.slice(lastIndex, match.index) });
     }
     // Find the car from context
-    const car = cars.find(c => c._id === match[1]);
+    const car = carList.find(c => c._id === match[1]);
     if (car) {
       parts.push({ type: 'car', car });
     }
     lastIndex = carIdRegex.lastIndex;
   }
-  if (lastIndex < text.length) {
-    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  if (lastIndex < safeText.length) {
+    parts.push({ type: 'text', content: safeText.slice(lastIndex) });
   }
   return parts;
 };
@@ -63,7 +65,7 @@ const MessageBubble = ({ msg, cars, navigate }) => {
     );
   }
 
-  const parts = parseReply(msg.parts[0].text, cars);
+  const parts = parseReply(msg.parts?.[0]?.text, cars);
   return (
     <div className="flex justify-start mb-3">
       <div className="max-w-[85%]">

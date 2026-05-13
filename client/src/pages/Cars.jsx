@@ -42,7 +42,8 @@ const Cars = () => {
   }, [cars]);
 
   const applyFiltersAndSort = (sourceCars) => {
-    let result = sourceCars.slice();
+    const carList = Array.isArray(sourceCars) ? sourceCars : [];
+    let result = carList.slice();
     if (input) {
       const q = input.toLowerCase();
       result = result.filter(car =>
