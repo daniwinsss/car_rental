@@ -61,9 +61,9 @@ const NavbarOwner = () => {
         <div className='flex items-center gap-4'>
             <div className='relative'>
                 <button onClick={() => setIsOpen((prev) => !prev)} className='relative'>
-                    <img src={assets.bell_icon} alt="" className='h-6 w-6'/>
+                    <img src={assets.bell_icon} alt="Notifications" className='h-6 w-6 text-gray-600'/>
                     {unreadCount > 0 && (
-                        <span className='absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full px-1.5'>
+                        <span className='absolute -top-2 -right-2 min-w-5 h-5 flex items-center justify-center bg-red-500 text-white text-[10px] rounded-full px-1.5 leading-none'>
                             {unreadCount}
                         </span>
                     )}

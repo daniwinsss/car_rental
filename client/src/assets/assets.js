@@ -30,6 +30,7 @@ import filter_icon from "./filter_icon.svg"
 import edit_icon from "./edit_icon.svg"
 import calendar_icon_colored from "./calendar_icon_colored.svg"
 import location_icon_colored from "./location_icon_colored.svg"
+import bell_icon from "./bell_icon.svg"
 import testimonial_image_1 from "./testimonial_image_1.png"
 import testimonial_image_2 from "./testimonial_image_2.png"
 import testimonial_image_3 from "./testimonial_image_3.png"
@@ -69,6 +70,7 @@ export const assets = {
     cautionIconColored,
     calendar_icon_colored,
     location_icon_colored,
+    bell_icon,
     arrow_icon,
     star_icon,
     check_icon,
