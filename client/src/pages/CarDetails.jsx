@@ -15,6 +15,7 @@ const CarDetails = () => {
   const navigate = useNavigate();
   const [car,setCar] = useState(null);
   const [bookedDates, setBookedDates] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
   const currency = import.meta.env.VITE_CURRENCY;
   
   const toInputDate = (date) => {
@@ -47,6 +48,7 @@ const CarDetails = () => {
 
   const handleSubmit = async(e) => {
     e.preventDefault();
+    if (submitting) return;
     try {
       if (!token || token === 'null' || token === 'undefined') {
         setShowLogin(true);
@@ -56,6 +58,8 @@ const CarDetails = () => {
       if (!pickupDate) return toast.error('Select a pickup date');
       if (!returnDate) return toast.error('Select a return date');
       if (totalDays === 0) return toast.error('Return date must be after pickup date');
+
+      setSubmitting(true);
       const {data} = await axios.post('/api/bookings/create',{
         car: id,
         pickupDate,
@@ -82,6 +86,8 @@ const CarDetails = () => {
       } else {
         toast.error(error?.response?.data?.message || error.message);
       }
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -236,9 +242,9 @@ const CarDetails = () => {
             </div>
             <button
               type="submit"
-              className={`w-full transition-all py-3 font-medium text-white rounded-xl cursor-pointer ${bookingIssue ? 'bg-gray-400 hover:bg-gray-400' : 'bg-primary hover:bg-primary-dull'}`}
+              className={`w-full transition-all py-3 font-medium text-white rounded-xl ${submitting ? 'bg-primary-dull cursor-wait' : bookingIssue ? 'bg-gray-400 hover:bg-gray-400 cursor-pointer' : 'bg-primary hover:bg-primary-dull cursor-pointer'}`}
             >
-              Book Now
+              {submitting ? 'Booking...' : 'Book Now'}
             </button>
             {bookingIssue && (
               <p className='text-center text-xs text-gray-500'>{bookingIssue}</p>
