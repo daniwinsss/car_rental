@@ -64,7 +64,7 @@ export const AppProvider = ({ children }) => {
 
     useEffect(() => {
         if (token && token !== "null" && token !== "undefined") {
-            axios.defaults.headers.common["Authorization"] = token;
+            axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
             fetchUser();
 
             if (!import.meta.env.PROD) {

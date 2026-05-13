@@ -11,7 +11,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 const CarDetails = () => {
   const {id} = useParams();
-  const {cars,axios,pickupDate,setPickupDate,returnDate,setReturnDate} = useAppContext();
+  const {cars,axios,pickupDate,setPickupDate,returnDate,setReturnDate,token,setShowLogin} = useAppContext();
   const navigate = useNavigate();
   const [car,setCar] = useState(null);
   const [bookedDates, setBookedDates] = useState([]);
@@ -39,13 +39,23 @@ const CarDetails = () => {
     return Number.isFinite(days) && days > 0 ? days : 0;
   };
 
+  const addDays = (date, days) => {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  };
+
   const handleSubmit = async(e) => {
     e.preventDefault();
     try {
-      const totalDays = getTotalDays(pickupDate, returnDate);
-      if (!pickupDate || !returnDate || totalDays === 0) {
-        return toast.error('Please select a valid pickup and return date');
+      if (!token || token === 'null' || token === 'undefined') {
+        setShowLogin(true);
+        return toast.error('Please login to book');
       }
+      const totalDays = getTotalDays(pickupDate, returnDate);
+      if (!pickupDate) return toast.error('Select a pickup date');
+      if (!returnDate) return toast.error('Select a return date');
+      if (totalDays === 0) return toast.error('Return date must be after pickup date');
       const {data} = await axios.post('/api/bookings/create',{
         car: id,
         pickupDate,
@@ -65,7 +75,13 @@ const CarDetails = () => {
         toast.error(sessionRes.data?.message || 'Payment session failed');
       }
     } catch (error) {
-      toast.error(error.message);
+      const status = error?.response?.status;
+      if (status === 401) {
+        setShowLogin(true);
+        toast.error('Please login to book');
+      } else {
+        toast.error(error?.response?.data?.message || error.message);
+      }
     }
   }
 
@@ -82,7 +98,9 @@ const CarDetails = () => {
           const disabledDates = [];
           data.data.bookedRanges.forEach(range => {
             let current = new Date(range.start);
+            current.setHours(0, 0, 0, 0);
             const end = new Date(range.end);
+            end.setHours(0, 0, 0, 0);
             while (current <= end) {
               disabledDates.push(new Date(current));
               current.setDate(current.getDate() + 1);
@@ -101,6 +119,16 @@ const CarDetails = () => {
 
   const totalDays = getTotalDays(pickupDate, returnDate);
   const totalPrice = totalDays > 0 ? totalDays * car.pricePerDay : 0;
+  const tokenValid = Boolean(token && token !== 'null' && token !== 'undefined');
+  const bookingIssue = !tokenValid
+    ? 'Please login to book'
+    : !pickupDate
+      ? 'Select a pickup date'
+      : !returnDate
+        ? 'Select a return date'
+        : totalDays === 0
+          ? 'Return date must be after pickup date'
+          : null;
 
   return (
     <>
@@ -181,9 +209,9 @@ const CarDetails = () => {
                 }}
                 excludeDates={bookedDates}
                 minDate={new Date()}
+                dateFormat="yyyy-MM-dd"
                 className='border border-borderColor w-full px-3 py-2 rounded-lg'
                 placeholderText="Select pickup date"
-                required
                 id='pickup-date'
               />
             </div>
@@ -193,10 +221,10 @@ const CarDetails = () => {
                 selected={fromInputDate(returnDate)}
                 onChange={(date) => setReturnDate(toInputDate(date))}
                 excludeDates={bookedDates}
-                minDate={pickupDate ? fromInputDate(pickupDate) : new Date()}
+                minDate={pickupDate ? addDays(fromInputDate(pickupDate), 1) : new Date()}
+                dateFormat="yyyy-MM-dd"
                 className='border border-borderColor w-full px-3 py-2 rounded-lg'
                 placeholderText="Select return date"
-                required
                 id='return-date'
               />
             </div>
@@ -206,9 +234,15 @@ const CarDetails = () => {
                 {currency}{totalPrice || 0}
               </span>
             </div>
-            <button className='w-full bg-primary hover:bg-primary-dull transition-all py-3 font-medium text-white rounded-xl cursor-pointer'>
+            <button
+              type="submit"
+              className={`w-full transition-all py-3 font-medium text-white rounded-xl cursor-pointer ${bookingIssue ? 'bg-gray-400 hover:bg-gray-400' : 'bg-primary hover:bg-primary-dull'}`}
+            >
               Book Now
             </button>
+            {bookingIssue && (
+              <p className='text-center text-xs text-gray-500'>{bookingIssue}</p>
+            )}
             <p className='text-center text-sm'>Secure payment required to confirm booking</p>
           </form>
         </div>
